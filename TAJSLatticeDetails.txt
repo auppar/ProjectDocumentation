@@ -1,0 +1,205 @@
+Here are the TAJS lattices and their details along with the respective classes in the project.
+----------------------------------------------------------------------------------------------
+
+PS - Power Set
+
+
+Value =  Undef x Null x Bool x Num x String x PS(L)
+
+An example of the abstract value,  ( _|_, null, _|_, _|_,baz,{} )
+Classes containing the following elements of the abstract value
+
+Value 	- 	Abstract Value, 			Value.java implements all the below mentioned interfaces
+Undef 	- 	Undefined datatype in JS,		Undef.java(interface)
+Null 	- 	Null datatype in JS, 			Null.java(interface)
+Bool 	- 	Bool datatype in JS,			Bool.java(interface)
+Num 	- 	Integer U floatpoint U +/- Infinity	num.java(interface)
+String 	- 	all character strings			String.java(interface)
+
+P(L) - Power set of the labels for allocation sites of the objects.(to consider a power set do we know all the allocation sites for the objects before hand ?)
+
+Obj = ((P (partially mapped) Value) x Absent x Attributes x Modified) x PS(ScopeChain)
+The Object Lattice "Obj" is captured in the class Obj.java.
+ScopeChain is captured in the class ScopeChain.java
+Absent,Attributes,Modified lattices are captured in class Value.java.
+
+P - is the set of all the possible property names in the javascript object.
+Absent - is used to signify the dynamic property creation and deletion in JS ,(a property maybe or definitely absent).
+
+The below "Attributes" lattice is supported for all the properties in the javascript object. A property of the object in JS may be flagged ReadOnly,DontDelete or DontEnum.
+Attributes = ReadOnly x DontDelete x DontEnum
+
+PS(ScopeChain) -  It is a list or chain of objects that defines the variables that are in scope for that code. When JS needs to look up the value of the property named 'x' it starts to look
+into the first object and so on till it finds the right object that has the variable 'x' defined in it.
+
+In top-level JavaScript code the scope chain consists of a single object the global object. In a non-nested function scope chain consists of two objects. The first is the object that defines 
+the functions's parameters and local variables and the second is the global object.
+
+
+State = (L (partially mapped) Obj) x Stack x PS(L) x PS(L)
+The State (Abstract State) lattice is captured in the class State.java . The State class also implements stack with object labels appearing in the stack. 
+The last two elements are related to the recency abstraction.
+
+Stack = (T (totally mapped) Value) x PS(ExecutionContext) x PS(L)
+Stack is the javascript runtime stack.
+The T are the temporaries as the part of the flowgraph representation. The individual statements of the source are broken down to read from and write to the temporary variables.
+PS(L) maps the set of object labels appearing in the stack.
+PS(Execution Context) is the topmost stack frame from the stack and it consists of all the objects of the scope that are relevant here.
+
+ExecutionContext = ScopeChain x L x L
+ExecutionContext Lattice is captured in the class ExecutionContext.java.
+ScopeChain - as mentioned previously it is the list of objects.
+When the function is called a new activation object is created.
+The last two labels identify the variable object and the "this" object.
+
+
+ScopeChain = L*
+is the list of zero or more object labels
+
+AnalysisLattice = V x N -> State
+AnalysisLattice is captured in the class AnalysisLatticeElement.java class.
+V denotes the context versions for context sensitivity and N is the node in the flow graph. State is the Abstract State
+
+
+Examples considered and the Abstract States inferred
+
+// Assignment and operations
+var a = 2;
+var b = "a";
+var c = 2+3;
+var d = 1 + "a";
+
+About the log for analysis of the .html
+---------------------------------------
+Execution context: ScopeChain=[[@<the global object>[native]]], VariableObject=[@<the global object>[native]], this=[@<the global object>[native]]
+
+According to the "VariableObject" in the execution context the variables are added as the properties for the object.
+@<the global object>[native] (<initial state>): {a:2.0,b:"a",c:5.0,d:"1a",[[DefaultArray]]=?,[[DefaultNonArray]]=?,[[Prototype]]=[@Object.prototype[native]],[[Value]]=?,[[Scope]]=?}
+
+
+The prototype is created for each of the defined varibles (maybe) they are considered as wrapper objects(they are also available in JS just like in JAVA).
+@Object.prototype[native] (<initial state>): {a:^(@Object.prototype[native].a[absent]),b:^(@Object.prototype[native].b[absent]),c:^(@Object.prototype[native].c[absent]),d:^(@Object.prototype[native].d[absent]),[[DefaultArray]]=?,[[DefaultNonArray]]=?,[[Prototype]]=Null,[[Value]]=?,[[Scope]]=?}
+
+Registers are flowgraph related temporary variable used in breaking the instructions into sub-instructions.
+
+
+
+// Object Literal Creation and accessing and assigning the properties
+var a = {
+		"a":1,
+		"b":2
+	};
+
+
+
+a.a		//accessing the properties using a dot operator
+a["a"]		//using the array string indexing to access the properties
+a.c		//accessing the unavailable property
+a.c = 3;	//creating the missing property for the object
+
+Adding prototype element of the object
+
+var a = {
+		"a":1,
+		"b":2
+	}
+
+a.prototype.c = 3;
+
+a.c //accessing the prototype chain to find the value of the element
+
+//Using the getters and setters for object properties
+
+var a = {
+		"a":1,
+		"b":2,
+		set c(value){
+			this.c = value * 10;
+			}
+		get c(){
+			return this.c;
+		}
+	};
+
+//Note that the getters and settes can also be used to change the values of the other properties of the object.
+a.c 		// non-existant property
+a.c = 10; 	//assigning value to the property and creating the property
+a.c 		//accessing the properties of the object
+
+//function creation and also having a nested function accessing the values of the outer function;
+function random() {
+	var a = 1;
+	var b = 2;
+	function show(){
+		alert(a)
+	}
+	return show;
+	}
+
+var d = random() // this invocation to print the value of varible a.
+var e = d();
+
+Execution context: ScopeChain=[[@activation#node9],[@<the global object>[native]]], VariableObject=[@activation#node9], this=[@<the global object>[native]]
+note that the Variable object is changes to the random function object to create new prperties for 
+
+Unclear objects in the log:
+---------------------------
+WorkingSet [] //have to study about the working set algorithm.
+maybe [],definitely [] sets
+statements like the, join this state,join other state.
+
+
+
+
+Log File Details:
+
+->	All the variable declarations are noted in the first node(first level declarations).
+->	Abstract state is maintained before block transfer and after node transfer.
+->	MayMaps and MaySets are maintained for the abstract objects(singleton) of htmlelements and event handlers.
+->	registers are the part of the analysis and dont represent any javascript declarations. But are bought up as the part of the analysis lattice.
+??	making writable objects from store default and making writable objects from store, dont know what is the difference.
+->	writePropertyWithAttributes is used to Assigns the given value to the given property of the given object, with attributes. Attributes are taken from the given value. Setters are not invoked.
+->	Modified is set on all values being written.The signature of the function is, (ObjectLabel,PropertyName,Value).
+->	detailed objects are associated "prototype" property of the object.
+??	the [[value]] property of the prototype objects.
+->	There are activation objects for each of the functions.
+->	Take note of the abstract state of the end of data flow analysis.
+??	What are the initial values of the variables when first declaredi -> (undef)
+->	There exists special lists called the "MaySets" and "MayMaps"
+->	MayMaps is a map, with properties ELEMENTS_BY_TAGNAME and ELEMENTS_BY_ID.The objects are singleton objects.
+->	Objects are created 2 times once during declaration and another time during invocation.
+
+
+About Events
+
+->	There is a special class called the EventDispatcherNode extending the Node class.
+->	This should be the only node in the block.
+->	No more than one successor block for this block-node.
+->	a method in class FlowGraphBuilder.java named "addASyncBlocks" adds the eventdispatcher node to the flowgraph which is called by the addEventDispatchers which is described as the method
+	that adds nodes for execution of the registered event handlers.
+->	A nop node is created before the eventDispatcher node is created.
+->	the events are executed the end of the flow-graph just like the client-side applications.The whole html page is parsed along with the script tags getting parsed and finally when all the parsing 
+	done, a property document.readyState is set and then the onDocumentLoaded event is triggered and then the other load events are fired.
+->	html elements are the objects which have properties to register different kinds of event handlers.
+->	The flowGraphBuilder class invokes addeventlistener when closing the flowgraph.
+->	A new flowgraph is created for events in the client side application.
+->	The TAJS abstract state is extended with the collection of set of reference to abstract objects that model the event handler function objects.One set is maintained for the each of the different
+	categories of events like, load,mouse,keyboard,timeout,ajax, and other.
+->	Flowgraph for the top level code is extended to include two loops, one for the load events and other one for the other kinds of events.
+
+
+Important Classes from the tool:
+->	FlowGraphBuilder.java - Converter from JavaScript source code to flow graphs.The order the sources are provided is significant.
+->	NopNode.java - creates a new node with some descriptive text.
+->	FunctionAndBlockManager.java - 
+->	AddEventListener.java - node type in the flow graph.
+
+Process to organise the events:
+->	Firstly we have an addeventlistener node type in the flow graph.
+->	
+
+How are the set of all event handlers organised into a single control flow graph?
+->	All the event handler objects for different types of event handlers are captured in seperate lists in a outer list called "MaySets".	
+
+
+How is the abstract interpretation performed on this graph?
