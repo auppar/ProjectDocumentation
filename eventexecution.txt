@@ -6,15 +6,34 @@ Exception edges - reaches a catch node from a node which raises an exception.
 call and return edges -
 
 
+Collections of the events from the HTML file:
+-> the events declared in the html tags are captured as a part of declaration in the main execution function and hence the respective events are registered and other events are added when the transfer function for "addEventListener" is called.
+-> the declarations of the events are captured incrementally during the dataflow analysis of the main function.
+-> the body of the function is not analysed until the function is called.Hence if the events are registered inside of other function handlers then the respective events are registered only when the out event handler is dispatched from the event queue.
+->  Different event-handlers are collected in a different set because we need to model the event objects for different kinds of events.
 
+Some points about the flowgraph:
+->  the nodes of the flowgraph starting from the eventDispatcher entry are connected to the post nodes of all kinds of events.
+->  To find the fixed points of the flow graph the working set algorithm.(read about it.)
 
 Process to organise the events:
 ->	During the process the 
 ->	Firstly we have an addeventlistener node type in the flow graph.
 ->	
 
+(GenericSolver.java)
+->  WorkList algorithm is used to find the fixed points for all the nodes in the flowgraph.(WorkList algorithm is simple,it initially considers all the nodes as the changed nodes and when the new value due to transfer function is not equal to the old value then all the successors of the current node are added to the changed nodes, which is the working list.
+->  The analysis is context sensitive.
+
 How are the set of all event handlers organised into a single control flow graph?
 ->	All the event handler objects for different types of event handlers are captured in seperate lists in a outer list called "MaySets".	
+
+
+Interprocedural Analysis
+->  Models the parameter passing for the functions.
+->  Models the pushing of the execution context to the stack.
+->  to avoid spurious flow the state of the object before and after the function call is noted and only if the object refernces which were supposed to be changed are changed then the flow is retained else the flow is discarded.
+->  call node transfer function connects the call node to the entry node of the function and the return node to the after call node.
 
 
 How is the abstract interpretation performed on this graph?
