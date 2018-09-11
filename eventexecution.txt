@@ -1,0 +1,20 @@
+The analysis represents the program as a flowgraph in which each node contains an instruction and each edge represents potential control flow between the instructions in the program. The graph has a designated program entry node.
+
+there are 3 kinds of edges
+Ordinary edges - edges for intra procedural control flow.
+Exception edges - reaches a catch node from a node which raises an exception.
+call and return edges -
+
+
+
+
+Process to organise the events:
+->	During the process the 
+->	Firstly we have an addeventlistener node type in the flow graph.
+->	
+
+How are the set of all event handlers organised into a single control flow graph?
+->	All the event handler objects for different types of event handlers are captured in seperate lists in a outer list called "MaySets".	
+
+
+How is the abstract interpretation performed on this graph?
