@@ -1,0 +1,7 @@
+Steps towards analysis of HTML application using TAJS:
+  As a part of initial state to the data flow analysis the abstract objects of different dom modules are built
+    - DOM Core
+    - DOM HTML - runtime HTML objects are modeled with the name "HTML[tagtype]ELEMENT".
+    - DOM Event
+    - Window Object
+    
