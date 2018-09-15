@@ -1,4 +1,22 @@
+Class Hierarchy used to build the DOM tree in the browser:
+
+The objects of the leaf nodes of the hierarchy are instantiated when a runtime dom tree is created. The hierarchy in the 
+dom tree is maintained as per the tag-containment in the HTML page for the application.
+    
+     |-> Document -> HTMLDocument
+     |
+     |                              |-> HTMLHeadElement 
+Node |-> Element  -> HTMLElement -> |-> HTMLParagraphElement
+     |                              |-> HTMLInputElement
+     |                           
+     |                   |-> Text
+     |-> CharacterData ->|
+                         |-> Comment
+                         
+          Fig 1
+                      
 Steps towards analysis of HTML application using TAJS:
+ 
   As a part of initial state to the data flow analysis the abstract objects of different dom modules are built
     - DOM Core
     - DOM HTML - runtime HTML objects are modeled with the name "HTML[tagtype]ELEMENT".
